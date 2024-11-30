@@ -23,7 +23,7 @@
 : "${MODRINTH_ALLOWED_VERSION_TYPE:=release}"
 : "${CUSTOM_FAMILY:=bungeecord}"
 
-BUNGEE_HOME=/server
+BUNGEE_HOME=/home/container
 RCON_JAR_URL=https://github.com/orblazer/bungee-rcon/releases/download/v${RCON_JAR_VERSION}/bungee-rcon-${RCON_JAR_VERSION}.jar
 RCON_VELOCITY_JAR_URL=https://mvn.tribufu.com/releases/com/tribufu/Tribufu-VelocityRcon/${RCON_VELOCITY_JAR_VERSION}/Tribufu-VelocityRcon-${RCON_VELOCITY_JAR_VERSION}.jar
 download_required=true
