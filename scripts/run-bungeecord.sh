@@ -343,16 +343,16 @@ if [ -n "$ICON" ]; then
       read -r -a specs < <(identify "$ICON" | awk 'NR == 1 { print $2, $3 }')
       if [ "${specs[0]} ${specs[1]}" = "PNG 64x64" ]; then
         if [ $iconSrc = url ]; then
-          mv -f /tmp/icon.img /server/server-icon.png
+          mv -f /tmp/icon.img /home/container/server-icon.png
         else
-          cp -f "$ICON" /server/server-icon.png
+          cp -f "$ICON" /home/container/server-icon.png
         fi
       elif [ "${specs[0]}" = GIF ]; then
         log "Converting GIF image to 64x64 PNG..."
-        convert "$ICON"[0] -resize 64x64! /server/server-icon.png
+        convert "$ICON"[0] -resize 64x64! /home/container/server-icon.png
       else
         log "Converting image to 64x64 PNG..."
-        convert "$ICON" -resize 64x64! /server/server-icon.png
+        convert "$ICON" -resize 64x64! /home/container/server-icon.png
       fi
     fi
 fi
@@ -402,7 +402,7 @@ if [[ $MODRINTH_PROJECTS ]]; then
   fi
 
   mc-image-helper modrinth \
-    --output-directory=/server \
+    --output-directory=/home/container \
     --projects="${MODRINTH_PROJECTS}" \
     --game-version="${MINECRAFT_VERSION}" \
     --loader="${family}" \

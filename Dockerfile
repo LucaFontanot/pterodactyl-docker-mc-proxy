@@ -1,8 +1,8 @@
 ARG BASE_IMAGE=eclipse-temurin:21-jre
 FROM ${BASE_IMAGE}
 
-VOLUME ["/server"]
-WORKDIR /server
+VOLUME ["/home/container"]
+WORKDIR /home/container
 
 RUN --mount=target=/build,source=build \
     /build/install-packages.sh

@@ -8,4 +8,4 @@ fi
 
 addgroup --gid 1000 bungeecord
 
-adduser --system --shell /bin/false --uid 1000 --ingroup bungeecord --home /server bungeecord
+adduser --system --shell /bin/false --uid 1000 --ingroup bungeecord --home /home/container bungeecord
