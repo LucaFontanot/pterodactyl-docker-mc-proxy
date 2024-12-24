@@ -15,7 +15,7 @@
 : "${REPLACE_ENV_DURING_SYNC:=true}"
 : "${REPLACE_ENV_VARIABLES:=false}"
 : "${REPLACE_ENV_SUFFIXES:=yml,yaml,txt,cfg,conf,properties,hjson,json,tml,toml}"
-: "${REPLACE_ENV_VARIABLE_PREFIX:=${ENV_VARIABLE_PREFIX:-CFG_}}"
+: "${REPLACE_ENV_VARIABLE_PREFIX=${ENV_VARIABLE_PREFIX-CFG_}}"
 : "${REPLACE_ENV_VARIABLES_EXCLUDES:=}"
 : "${REPLACE_ENV_VARIABLES_EXCLUDE_PATHS:=}"
 : "${MODRINTH_PROJECTS:=}"
@@ -384,6 +384,15 @@ if [[ "$PLUGINS" ]]; then
           --scope=var-list \
           --to="$BUNGEE_HOME/plugins" \
           "$PLUGINS"
+fi
+
+if [[ "$PLUGINS_FILE" ]]; then
+ mkdir -p "$BUNGEE_HOME/plugins"
+ mc-image-helper mcopy \
+          --file-is-listing \
+          --scope=file-list \
+          --to="$BUNGEE_HOME/plugins" \
+          "$PLUGINS_FILE"
 fi
 
 # Download plugins from spigotmc and put them in the plugins folder
