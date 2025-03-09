@@ -26,7 +26,7 @@ jobs:
             platforms: linux/amd64,linux/arm/v7,linux/arm64
             tagPrefix: java17-
           - variant: java21
-            baseImage: eclipse-temurin:21-jre
+            baseImage: eclipse-temurin:21-jdk
             platforms: linux/amd64,linux/arm64
             tagPrefix: java21-
           - variant: java8
