@@ -9,6 +9,7 @@ apk add sudo \
     nano \
     unzip \
     imagemagick \
-    bash
+    bash \
+    g++
 
 apk cache clean
