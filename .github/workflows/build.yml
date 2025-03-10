@@ -23,7 +23,7 @@ jobs:
         include:
           - variant: java17
             baseImage: amazoncorretto:17-alpine-jdk
-            platforms: linux/amd64,linux/arm/v7,linux/arm64
+            platforms: linux/amd64,linux/arm64
             tagPrefix: java17-
           - variant: java21
             baseImage: amazoncorretto:21-alpine-jdk
@@ -31,11 +31,11 @@ jobs:
             tagPrefix: java21-
           - variant: java8
             baseImage: amazoncorretto:8-alpine-jdk
-            platforms: linux/amd64,linux/arm/v7,linux/arm64
+            platforms: linux/amd64,linux/arm64
             tagPrefix: java8-
           - variant: java11
             baseImage: amazoncorretto:11-alpine-jdk
-            platforms: linux/amd64,linux/arm/v7,linux/arm64
+            platforms: linux/amd64,linux/arm64
             tagPrefix: java11-
     env:
       DOCKER_HUB_ORG: lucafontanot
