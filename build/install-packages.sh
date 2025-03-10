@@ -1,17 +1,14 @@
-#!/bin/bash
+#!/bin/sh
 
-set -euo pipefail
+apk update
 
-apt-get update
-
-DEBIAN_FRONTEND=noninteractive \
-  apt-get install -y \
-    sudo \
+apk add sudo \
     net-tools \
     curl \
     tzdata \
     nano \
     unzip \
-    imagemagick
+    imagemagick \
+    bash
 
-apt-get clean
+apk cache clean

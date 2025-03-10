@@ -22,19 +22,19 @@ jobs:
           - java8
         include:
           - variant: java17
-            baseImage: eclipse-temurin:17-focal
+            baseImage: amazoncorretto:17-alpine-jdk
             platforms: linux/amd64,linux/arm/v7,linux/arm64
             tagPrefix: java17-
           - variant: java21
-            baseImage: eclipse-temurin:21-jdk
+            baseImage: amazoncorretto:21-alpine-jdk
             platforms: linux/amd64,linux/arm64
             tagPrefix: java21-
           - variant: java8
-            baseImage: adoptopenjdk:8-jre-hotspot-focal
+            baseImage: amazoncorretto:8-alpine-jdk
             platforms: linux/amd64,linux/arm/v7,linux/arm64
             tagPrefix: java8-
           - variant: java11
-            baseImage: adoptopenjdk:11-jre-hotspot-focal
+            baseImage: amazoncorretto:11-alpine-jdk
             platforms: linux/amd64,linux/arm/v7,linux/arm64
             tagPrefix: java11-
     env:

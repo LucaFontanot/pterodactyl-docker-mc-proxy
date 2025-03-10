@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=eclipse-temurin:21-jre
+ARG BASE_IMAGE=amazoncorretto:21-alpine-jdk
 FROM ${BASE_IMAGE}
 
 VOLUME ["/home/container"]
