@@ -59,7 +59,9 @@ healthy
 
 * **TYPE**=BUNGEECORD
 
-  The type of the server. When the type is set to `CUSTOM`, the environment setting `BUNGEE_JAR_URL` is required.
+  The type of the server. 
+* 
+* When the type is set to `CUSTOM`, the environment setting `BUNGEE_JAR_URL` is required. `CUSTOM_FAMILY` must also be set of `bungeecord` (default), `velocity`, or `waterfall`. 
 
   Possible values: 
   - [`BUNGEECORD`](https://www.spigotmc.org/wiki/bungeecord/)
@@ -133,6 +135,20 @@ healthy
                                                        ===
   ```
 
+* **DOWNLOAD_EXTRA_CONFIGS**
+
+  Additional configuration files or other resources can be fetched automatically before the server starts by setting this variable.  Each entry uses the form `destination<source_url` and multiple entries are separated by commas.  Paths are relative to `/server` inside the container, so `plugins/xyz` means `/server/plugins/xyz` will be written.
+
+  The helper skips files that already exist and will update them if the remote copy is newer.  This is intended for files you wish to patch or modify during startup.
+
+  Example:
+
+  ```bash
+  -e DOWNLOAD_EXTRA_CONFIGS="plugins/WorldEdit<https://example.com/worldedit.yml,config<https://example.com/another.yml"
+  ```
+
+
+
 * **MODRINTH_PROJECTS**
 
   Comma or newline separated list of project slugs (short name) or IDs. The project ID is located in the "Technical information" section. The slug is the part of the page URL that follows `/mod/`:
@@ -152,7 +168,7 @@ healthy
 
   Enable the rcon server (uses a third-party plugin to work).
   - [orblazer/bungee-rcon](https://github.com/orblazer/bungee-rcon) for `BUNGEECORD`, `WATERFALL`, and `CUSTOM`
-  - [TribuFuForks/VelocityRcon](https://github.com/TribufuForks/VelocityRcon) for `VELOCITY`
+  - [code-lime/Velocircon](https://github.com/code-lime/Velocircon) for `VELOCITY`
 
 * **RCON_PORT**
 
@@ -242,12 +258,18 @@ healthy
 
 * **25577**
 
-  The listening port of BungeeCord, which you will typically want to port map
+  The default listening port of BungeeCord and Waterfall, which you will typically want to port map
   to the standard Minecraft server port of 25565 using:
 
   ```
   -p 25565:25577
   ```
+
+* **25565**
+
+  The default listening port of Velocity; however, [the example](docs/velocity/docker-compose.yml) shows that can be altered by setting `bind` in `velocity.toml` to "localhost:25577" to match BungeeCord/Waterfall.
+
+The health check will try to determine the correct port to check based upon the type and configuration; however, you can always set the environment variable `SERVER_PORT` to force a specific port to evaluate.
 
 ## Java Versions
 
@@ -257,7 +279,14 @@ The following table shows the Java versions and CPU architectures supported by t
 |--------|------|---------------------|
 | latest | 17   | amd64, arm64, armv7 |
 | java8  | 8    | amd64, arm64, armv7 |
-| java11 | 11   | amd64, arm64, armv7 |
+| java25 | 25   | amd64, arm64        |
+
+### Deprecated image tags
+
+The following image tags are deprecated. They are still available from Docker Hub but no longer received updates.
+
+- java11
+- java24
 
 ## Interacting with the server
 

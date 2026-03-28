@@ -3,7 +3,7 @@
 : "${TYPE:=BUNGEECORD}"
 : "${DEBUG:=false}"
 : "${RCON_JAR_VERSION:=1.0.0}"
-: "${RCON_VELOCITY_JAR_VERSION:=1.2.0}"
+: "${RCON_VELOCITY_JAR_VERSION:=1.0.6}"
 : "${SPIGET_PLUGINS:=}"
 : "${NETWORKADDRESS_CACHE_TTL:=60}"
 : "${INIT_MEMORY:=${MEMORY}}"
@@ -22,10 +22,13 @@
 : "${MODRINTH_DOWNLOAD_DEPENDENCIES:=required}"
 : "${MODRINTH_ALLOWED_VERSION_TYPE:=release}"
 : "${CUSTOM_FAMILY:=bungeecord}"
+: "${SKIP_DOWNLOAD_DEFAULTS:=false}"
+: "${DOWNLOAD_EXTRA_CONFIGS:=}"
+: "${DEFAULT_CONFIG_REPO:=https://raw.githubusercontent.com/Shonz1/minecraft-default-configs/main}"
 
 BUNGEE_HOME=/home/container
 RCON_JAR_URL=https://github.com/orblazer/bungee-rcon/releases/download/v${RCON_JAR_VERSION}/bungee-rcon-${RCON_JAR_VERSION}.jar
-RCON_VELOCITY_JAR_URL=https://mvn.tribufu.com/releases/com/tribufu/Tribufu-VelocityRcon/${RCON_VELOCITY_JAR_VERSION}/Tribufu-VelocityRcon-${RCON_VELOCITY_JAR_VERSION}.jar
+RCON_VELOCITY_JAR_URL=https://github.com/code-lime/Velocircon/releases/download/${RCON_VELOCITY_JAR_VERSION}/Velocircon-${RCON_VELOCITY_JAR_VERSION}.jar
 download_required=true
 
 set -eo pipefail
@@ -45,6 +48,17 @@ function isTrue() {
   esac
 
   return ${result}
+}
+
+function isFalse() {
+  case "${1,,}" in
+  false | no | off | 0)
+    return 0
+    ;;
+  *)
+    return 1
+    ;;
+  esac
 }
 
 function isDebugging() {
@@ -205,6 +219,8 @@ function processConfigs {
       fi
   fi
 
+  downloadDefaultConfigs
+
   # Replace environment variables in config files
   if isTrue "${REPLACE_ENV_VARIABLES}"; then
     log "Replacing env variables in configs that match the prefix $REPLACE_ENV_VARIABLE_PREFIX..."
@@ -237,30 +253,75 @@ function getFromPaperMc() {
   local version=${2?}
   local buildId=${3?}
 
-  # Doc : https://api.papermc.io/
-
-  if [[ ${version^^} = LATEST ]]; then
-    if ! version=$(get --json-path=".versions[-1]" "https://api.papermc.io/v2/projects/${project}"); then
-      echo "ERROR: failed to lookup PaperMC versions"
-      exit 1
-    fi
+  args=(--results-file .results.env)
+  if [[ ${version^^} != LATEST ]]; then
+    args+=(--version "$version")
+  fi
+  if [[ ${buildId^^} != LATEST ]]; then
+    args+=(--build "$buildId")
   fi
 
-  if [[ ${buildId^^} = LATEST ]]; then
-    if ! buildId=$(get --json-path=".builds[-1]" "https://api.papermc.io/v2/projects/${project}/versions/${version}"); then
-        echo "ERROR: failed to lookup PaperMC build from version ${version}"
-        exit 1
-    fi
-  fi
-
-
-  if ! jar=$(get --json-path=".downloads.application.name" "https://api.papermc.io/v2/projects/${project}/versions/${version}/builds/${buildId}"); then
-    echo "ERROR: failed to lookup PaperMC download file from version=${version} build=${buildId}"
+  if ! mc-image-helper install-paper --project "$project" "${args[@]}"; then
+    echo "ERROR: failed to download"
     exit 1
   fi
 
-  BUNGEE_JAR_URL="https://api.papermc.io/v2/projects/${project}/versions/${version}/builds/${buildId}/downloads/${jar}"
-  BUNGEE_JAR=$BUNGEE_HOME/${BUNGEE_JAR:=${project}-${version}-${buildId}.jar}
+  source .results.env
+  BUNGEE_JAR="$SERVER"
+}
+
+function buildDownloadList() {
+  repoUrl=${1?}
+  version=${2?}
+  shift 2
+  result=
+  for c in "${@}"; do
+    if [[ $result ]]; then
+      result+=","
+    fi
+    result+="${repoUrl}/${version}/$c"
+  done
+  echo "$result"
+}
+
+function downloadDefaultConfigs() {
+  if isFalse "$SKIP_DOWNLOAD_DEFAULTS"; then
+    if [[ $DOWNLOAD_DEFAULTS ]]; then
+      log "Downloading default top-level configs, if needed"
+      if ! mc-image-helper mcopy \
+        --to /server \
+        --skip-existing --skip-up-to-date=false \
+        "$DOWNLOAD_DEFAULTS" 2> /dev/null; then
+        log "WARN: One or more default files were not available from $DOWNLOAD_DEFAULTS"
+      fi
+    fi
+  fi
+
+  if [[ "${family}" == "velocity" ]]; then
+    SECRET_FILE="/server/forwarding.secret"
+
+    if [ ! -f "$SECRET_FILE" ]; then
+      # generate 32 random alphanumeric characters
+      head /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 32 > "$SECRET_FILE"
+      log "Created $SECRET_FILE"
+    else
+      log "$SECRET_FILE already exists"
+    fi
+  fi
+  
+  # Download any extra configs specified by the user.  The format is
+  # destination<url[,destination2<url2,...] and behaves similarly to
+  # DOWNLOAD_DEFAULTS except that files are always copied relative to
+  # the server directory.
+  if [[ $DOWNLOAD_EXTRA_CONFIGS ]]; then
+    log "Downloading extra configuration files"
+    mc-image-helper mcopy \
+      --to /server \
+      --skip-existing \
+      --skip-up-to-date=false \
+      --quiet-when-skipped \
+      "$DOWNLOAD_EXTRA_CONFIGS"
+  fi
 }
 
 ### MAIN
@@ -281,18 +342,23 @@ case "${TYPE^^}" in
     BUNGEE_JAR=$BUNGEE_HOME/${BUNGEE_JAR:=BungeeCord-${BUNGEE_JAR_REVISION}.jar}
     pruningPrefix=BungeeCord
     family=bungeecord
+    DOWNLOAD_DEFAULTS=$(buildDownloadList "$DEFAULT_CONFIG_REPO" "bungeecord" "config.yml")
   ;;
 
   WATERFALL)
     getFromPaperMc waterfall "${WATERFALL_VERSION:-latest}" "${WATERFALL_BUILD_ID:-latest}"
-    pruningPrefix=waterfall
+    # downloaded by getFromPaperMc
+    download_required=false
     family=bungeecord
+    DOWNLOAD_DEFAULTS=$(buildDownloadList "$DEFAULT_CONFIG_REPO" "waterfall" "config.yml" "waterfall.yml")
  ;;
 
   VELOCITY)
     getFromPaperMc velocity "${VELOCITY_VERSION:-latest}" "${VELOCITY_BUILD_ID:-latest}"
-    pruningPrefix=velocity
+    # downloaded by getFromPaperMc
+    download_required=false
     family=velocity
+    DOWNLOAD_DEFAULTS=$(buildDownloadList "$DEFAULT_CONFIG_REPO" "velocity" "velocity.toml")
   ;;
 
   CUSTOM)
@@ -420,20 +486,25 @@ if [[ $MODRINTH_PROJECTS ]]; then
 fi
 
 # Download rcon plugin
-if [[ "${family}" == "velocity" ]] || isTrue "${APPLY_VELOCITY_RCON:-false}"; then # Download UnioDex/VelocityRcon plugin
+if [[ "${family}" == "velocity" ]] || isTrue "${APPLY_VELOCITY_RCON:-false}"; then # Download code-lime/Velocircon plugin
   if isTrue "${ENABLE_RCON}"; then
     log "Downloading Velocity rcon plugin"
 
-    mkdir -p "$BUNGEE_HOME/plugins"
+    mkdir -p "$BUNGEE_HOME/plugins/velocircon"
     if ! get -o "$BUNGEE_HOME/plugins" --skip-up-to-date --log-progress-each "$RCON_VELOCITY_JAR_URL"; then
       echo "ERROR: failed to download from $RCON_VELOCITY_JAR_URL"
       exit 1
     fi
 
-    log "Copy Velocity rcon configuration"
-    mkdir -p $BUNGEE_HOME/plugins/velocityrcon
-    sed -e 's#${PORT}#'"$RCON_PORT"'#g' -e 's#${PASSWORD}#'"$RCON_PASSWORD"'#g' \
-      /templates/rcon-velocity-config.toml > "$BUNGEE_HOME/plugins/velocityrcon/rcon.toml"
+    configFile="$BUNGEE_HOME/plugins/velocircon/rcon.yml"
+    if [ ! -e "$configFile" ]; then
+      log "Copy Velocity rcon configuration"
+       # shellcheck disable=SC2016
+      sed \
+        -e 's#${PORT}#'"$RCON_PORT"'#g' \
+        -e 's#${PASSWORD}#'"$RCON_PASSWORD"'#g' \
+        /templates/rcon-velocity-config.yml > "$configFile"
+    fi
   fi
 
 # Download orblazer/bungee-rcon plugin
