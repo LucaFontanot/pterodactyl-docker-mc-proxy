@@ -289,7 +289,7 @@ function downloadDefaultConfigs() {
     if [[ $DOWNLOAD_DEFAULTS ]]; then
       log "Downloading default top-level configs, if needed"
       if ! mc-image-helper mcopy \
-        --to /server \
+        --to /home/container \
         --skip-existing --skip-up-to-date=false \
         "$DOWNLOAD_DEFAULTS" 2> /dev/null; then
         log "WARN: One or more default files were not available from $DOWNLOAD_DEFAULTS"
@@ -298,7 +298,7 @@ function downloadDefaultConfigs() {
   fi
 
   if [[ "${family}" == "velocity" ]]; then
-    SECRET_FILE="/server/forwarding.secret"
+    SECRET_FILE="/home/container/forwarding.secret"
 
     if [ ! -f "$SECRET_FILE" ]; then
       # generate 32 random alphanumeric characters
@@ -316,7 +316,7 @@ function downloadDefaultConfigs() {
   if [[ $DOWNLOAD_EXTRA_CONFIGS ]]; then
     log "Downloading extra configuration files"
     mc-image-helper mcopy \
-      --to /server \
+      --to /home/container \
       --skip-existing \
       --skip-up-to-date=false \
       --quiet-when-skipped \
